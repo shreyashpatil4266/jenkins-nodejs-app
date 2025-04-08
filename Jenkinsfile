@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "jenkins-node-app"
+        CONTAINER_NAME = "jenkins-node-app"
+        PORT = "3000"
+    }
+
     stages {
         stage('Build') {
             steps {
@@ -8,23 +14,33 @@ pipeline {
                 sh 'npm install'
             }
         }
+
         stage('Test') {
             steps {
                 echo '🧪 Running tests...'
-                // Add test command if needed: sh 'npm test'
+                // You can add test commands like:
+                // sh 'npm test'
             }
         }
+
         stage('Deploy') {
             steps {
-                echo '🚀 Stopping any running container...'
-                sh 'docker stop jenkins-node-app || true'
-                sh 'docker rm jenkins-node-app || true'
+                echo '🧹 Stopping and removing old container (if any)...'
+                sh '''
+                    docker stop $CONTAINER_NAME || true
+                    docker rm $CONTAINER_NAME || true
+                '''
+                
+                echo '🧼 Removing old image (if any)...'
+                sh '''
+                    docker rmi $IMAGE_NAME || true
+                '''
 
-                echo '🐳 Building fresh Docker image...'
-                sh 'docker build --no-cache -t jenkins-node-app .'
-
-                echo '🚀 Running new container...'
-                sh 'docker run -d -p 3000:3000 --name jenkins-node-app jenkins-node-app'
+                echo '🚀 Building and running the new Docker container...'
+                sh '''
+                    docker build --no-cache -t $IMAGE_NAME .
+                    docker run -d -p $PORT:$PORT --name $CONTAINER_NAME $IMAGE_NAME
+                '''
             }
         }
     }
