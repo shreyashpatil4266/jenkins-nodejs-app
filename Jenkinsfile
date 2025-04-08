@@ -16,10 +16,14 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                echo '🚀 Deploying the app using Docker...'
+                echo '🚀 Stopping any running container...'
                 sh 'docker stop jenkins-node-app || true'
                 sh 'docker rm jenkins-node-app || true'
-                sh 'docker build -t jenkins-node-app .'
+
+                echo '🐳 Building fresh Docker image...'
+                sh 'docker build --no-cache -t jenkins-node-app .'
+
+                echo '🚀 Running new container...'
                 sh 'docker run -d -p 3000:3000 --name jenkins-node-app jenkins-node-app'
             }
         }
